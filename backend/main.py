@@ -7,10 +7,10 @@ from app.api.docs import router as docs_router
 
 app = FastAPI(title="Secure Local AI Workspace (SLAW) API")
 
-# Configure CORS
+# Configure CORS - Restrict for security
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173"],  # Vite default port
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

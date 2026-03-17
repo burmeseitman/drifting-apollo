@@ -14,6 +14,17 @@ if not os.path.exists(UPLOAD_DIR):
 
 @router.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
+    # Security: Limit file size (e.g., 10MB)
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    
+    # Read a chunk to check size
+    contents = await file.read(MAX_FILE_SIZE + 1)
+    if len(contents) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB.")
+    
+    # Reset file pointer after reading
+    await file.seek(0)
+    
     file_extension = os.path.splitext(file.filename)[1].lower()
     file_id = str(uuid.uuid4())
     file_path = os.path.join(UPLOAD_DIR, f"{file_id}{file_extension}")
