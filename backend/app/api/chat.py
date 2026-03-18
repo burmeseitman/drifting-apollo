@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.security.injection_detector import InjectionDetector
 from app.core.logging import log_suspicious_query
@@ -29,8 +29,8 @@ async def chat_endpoint(request: ChatRequest):
     if request.use_rag:
         try:
             results = vector_db.query_documents(sanitized_prompt)
-            if results['documents']:
-                context = "\n".join(results['documents'][0])
+            if results["documents"]:
+                context = "\n".join(results["documents"][0])
         except Exception as e:
             print(f"RAG Error: {e}")
 

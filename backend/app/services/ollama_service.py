@@ -1,9 +1,16 @@
 import requests
-import json
 
 class OllamaService:
     def __init__(self, base_url="http://localhost:11434"):
         self.base_url = base_url
+
+    def is_available(self) -> bool:
+        try:
+            response = requests.get(f"{self.base_url}/api/tags", timeout=2)
+            response.raise_for_status()
+            return True
+        except Exception:
+            return False
 
     def generate_response(self, model: str, prompt: str, context: str = ""):
         url = f"{self.base_url}/api/generate"
@@ -17,7 +24,7 @@ class OllamaService:
         }
         
         try:
-            response = requests.post(url, json=payload)
+            response = requests.post(url, json=payload, timeout=60)
             response.raise_for_status()
             return response.json().get("response", "No response from model.")
         except Exception as e:
@@ -31,7 +38,7 @@ class OllamaService:
             "stream": False
         }
         try:
-            response = requests.post(url, json=payload)
+            response = requests.post(url, json=payload, timeout=60)
             response.raise_for_status()
             return response.json().get("message", {}).get("content", "No content.")
         except Exception as e:

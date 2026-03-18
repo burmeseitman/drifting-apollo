@@ -1,10 +1,51 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Sidebar from './components/Sidebar/Sidebar'
 import ChatWindow from './components/Chat/ChatWindow'
+import { fetchHealth } from './lib/api'
 import './App.css'
 
 function App() {
   const [role, setRole] = useState('user')
+  const [serviceState, setServiceState] = useState({
+    tone: 'checking',
+    label: 'Checking local services...',
+  })
+
+  useEffect(() => {
+    let active = true
+
+    async function loadHealth() {
+      try {
+        const health = await fetchHealth()
+        if (!active) {
+          return
+        }
+
+        const ollamaState = health.services?.ollama ? 'LLM ready' : 'LLM offline'
+        const chromaState = health.services?.chroma ? 'RAG ready' : 'RAG offline'
+
+        setServiceState({
+          tone: health.status === 'healthy' ? 'online' : 'degraded',
+          label: `${health.status === 'healthy' ? 'Local services ready' : 'Local services degraded'} · ${ollamaState} · ${chromaState}`,
+        })
+      } catch {
+        if (!active) {
+          return
+        }
+
+        setServiceState({
+          tone: 'error',
+          label: 'Backend unavailable',
+        })
+      }
+    }
+
+    loadHealth()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   return (
     <div className="app-container">
@@ -12,14 +53,14 @@ function App() {
       <main className="main-content">
         <header className="top-bar">
           <div className="status-indicator">
-            <span className="dot online"></span>
-            Local LLM: Connected (Ollama)
+            <span className={`dot ${serviceState.tone}`}></span>
+            {serviceState.label}
           </div>
           <div className="user-info">
-             Current Access: <span className="badge">{role.toUpperCase()}</span>
+             Workspace View: <span className="badge">{role.toUpperCase()}</span>
           </div>
         </header>
-        <ChatWindow role={role} />
+        <ChatWindow />
       </main>
 
       <style jsx>{`
@@ -57,6 +98,15 @@ function App() {
         .dot.online {
           background: var(--accent);
           box-shadow: 0 0 8px var(--accent);
+        }
+        .dot.degraded,
+        .dot.checking {
+          background: #f59e0b;
+          box-shadow: 0 0 8px #f59e0b;
+        }
+        .dot.error {
+          background: var(--danger);
+          box-shadow: 0 0 8px var(--danger);
         }
         .badge {
           background: var(--primary);

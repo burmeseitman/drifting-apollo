@@ -1,6 +1,35 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
+import { uploadDocument } from '../../lib/api';
 
 const Sidebar = ({ role, setRole }) => {
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadState, setUploadState] = useState('PDF and TXT files are supported.');
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadState(`Uploading ${file.name}...`);
+
+    try {
+      await uploadDocument(file);
+      setUploadState(`${file.name} was indexed successfully.`);
+    } catch (error) {
+      setUploadState(error.message);
+    } finally {
+      event.target.value = '';
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="sidebar glass-morphism">
       <div className="logo-section">
@@ -20,7 +49,7 @@ const Sidebar = ({ role, setRole }) => {
       </div>
 
       <div className="role-switcher">
-        <span className="role-label">Mode:</span>
+        <span className="role-label">View:</span>
         <select 
           value={role} 
           onChange={(e) => setRole(e.target.value)}
@@ -32,8 +61,19 @@ const Sidebar = ({ role, setRole }) => {
       </div>
 
       <div className="doc-upload glass-morphism">
-          <p>Drop documents to train local AI</p>
-          <button className="upload-btn">Upload</button>
+          <p>Index local documents for retrieval</p>
+          <span className="helper-text">Workspace view only. Auth is not wired yet.</span>
+          <button className="upload-btn" onClick={handleUploadClick} disabled={isUploading}>
+            {isUploading ? 'Uploading...' : 'Upload'}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.txt"
+            onChange={handleFileChange}
+            hidden
+          />
+          <p className="upload-status">{uploadState}</p>
       </div>
 
       <style jsx>{`
@@ -95,6 +135,13 @@ const Sidebar = ({ role, setRole }) => {
           text-align: center;
           border: 2px dashed var(--border);
         }
+        .helper-text {
+          display: block;
+          margin-top: 8px;
+          color: var(--text-muted);
+          font-size: 0.8rem;
+          line-height: 1.4;
+        }
         .upload-btn {
           margin-top: 12px;
           padding: 8px 24px;
@@ -107,6 +154,17 @@ const Sidebar = ({ role, setRole }) => {
         }
         .upload-btn:hover {
           background: var(--primary-hover);
+        }
+        .upload-btn:disabled {
+          cursor: not-allowed;
+          opacity: 0.7;
+        }
+        .upload-status {
+          margin-top: 12px;
+          color: var(--text-muted);
+          font-size: 0.85rem;
+          line-height: 1.4;
+          word-break: break-word;
         }
       `}</style>
     </div>

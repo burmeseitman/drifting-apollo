@@ -1,19 +1,37 @@
 import React, { useState } from 'react';
+import { sendChatMessage } from '../../lib/api';
 
 const ChatWindow = () => {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Welcome to SLAW. I am your secure local assistant. All data stays on this machine.' }
   ]);
   const [input, setInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [useRag, setUseRag] = useState(true);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    setMessages([...messages, { role: 'user', content: input }]);
+  const handleSend = async () => {
+    const prompt = input.trim();
+    if (!prompt || isSending) return;
+
+    setMessages((prev) => [...prev, { role: 'user', content: prompt }]);
     setInput('');
-    // Mock response
-    setTimeout(() => {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Secure analysis complete. Local model (Ollama) is processing your request..." }]);
-    }, 1000);
+    setIsSending(true);
+
+    try {
+      const result = await sendChatMessage({ prompt, use_rag: useRag });
+      const responseText = result.context_used
+        ? `${result.response}\n\nIndexed documents were used for this answer.`
+        : result.response;
+
+      setMessages((prev) => [...prev, { role: 'assistant', content: responseText }]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: `Request failed: ${error.message}` },
+      ]);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -27,16 +45,31 @@ const ChatWindow = () => {
           </div>
         ))}
       </div>
-      
-      <div className="input-container glass-morphism">
-        <input 
-          type="text" 
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a secure message..."
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-        />
-        <button onClick={handleSend} className="send-btn">Send</button>
+
+      <div className="composer-panel glass-morphism">
+        <label className="rag-toggle">
+          <input
+            type="checkbox"
+            checked={useRag}
+            onChange={(e) => setUseRag(e.target.checked)}
+          />
+          Use indexed documents
+        </label>
+
+        <div className="input-container">
+          <input
+            className="text-input"
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask the local assistant..."
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            disabled={isSending}
+          />
+          <button onClick={handleSend} className="send-btn" disabled={isSending}>
+            {isSending ? 'Sending...' : 'Send'}
+          </button>
+        </div>
       </div>
 
       <style jsx>{`
@@ -76,13 +109,25 @@ const ChatWindow = () => {
           background: var(--bg-card);
           border-bottom-left-radius: 4px;
         }
-        .input-container {
+        .composer-panel {
           padding: 12px;
           display: flex;
+          flex-direction: column;
           gap: 12px;
           margin-bottom: 0px;
         }
-        input {
+        .rag-toggle {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: var(--text-muted);
+          font-size: 0.9rem;
+        }
+        .input-container {
+          display: flex;
+          gap: 12px;
+        }
+        .text-input {
           flex: 1;
           background: transparent;
           border: none;
@@ -99,6 +144,10 @@ const ChatWindow = () => {
           color: white;
           cursor: pointer;
           font-weight: 600;
+        }
+        .send-btn:disabled {
+          cursor: not-allowed;
+          opacity: 0.7;
         }
       `}</style>
     </div>
