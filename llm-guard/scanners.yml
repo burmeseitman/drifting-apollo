@@ -1,0 +1,59 @@
+app:
+  name: ${APP_NAME:SLAW LLM Guard API}
+  log_level: ${LOG_LEVEL:INFO}
+  log_json: ${LOG_JSON:true}
+  scan_fail_fast: ${SCAN_FAIL_FAST:true}
+  scan_prompt_timeout: ${SCAN_PROMPT_TIMEOUT:15}
+  scan_output_timeout: ${SCAN_OUTPUT_TIMEOUT:15}
+  lazy_load: ${LAZY_LOAD:true}
+
+rate_limit:
+  enabled: ${RATE_LIMIT_ENABLED:true}
+  limit: ${RATE_LIMIT_LIMIT:60/minute}
+
+auth:
+  type: http_bearer
+  token: ${AUTH_TOKEN:slaw-guard-token}
+
+input_scanners:
+  - type: InvisibleText
+    params: {}
+  - type: PromptInjection
+    params:
+      threshold: 0.92
+      match_type: truncate_head_tail
+      model_max_length: 256
+  - type: Secrets
+    params:
+      redact_mode: all
+  - type: Regex
+    params:
+      patterns:
+        - "Bearer [A-Za-z0-9\\-._~+/]+=*"
+        - "(?i)(api[_-]?key|access[_-]?token|secret[_-]?key)\\s*[:=]\\s*[A-Za-z0-9\\-._~+/=]{8,}"
+      is_blocked: true
+      match_type: search
+      redact: true
+  - type: TokenLimit
+    params:
+      limit: 4096
+      encoding_name: cl100k_base
+
+output_scanners:
+  - type: Regex
+    params:
+      patterns:
+        - "Bearer [A-Za-z0-9\\-._~+/]+=*"
+        - "(?i)(api[_-]?key|access[_-]?token|secret[_-]?key)\\s*[:=]\\s*[A-Za-z0-9\\-._~+/=]{8,}"
+      is_blocked: true
+      match_type: search
+      redact: true
+  - type: Sensitive
+    params:
+      redact: true
+      threshold: 0.75
+      model_max_length: 256
+  - type: MaliciousURLs
+    params:
+      threshold: 0.75
+      model_max_length: 256

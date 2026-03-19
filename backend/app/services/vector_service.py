@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 import chromadb
 
@@ -26,9 +27,7 @@ class VectorService:
             return self.collection
         except Exception as exc:
             self._reset_client()
-            raise RuntimeError(
-                f"Chroma is unavailable at {self.host}:{self.port}."
-            ) from exc
+            raise RuntimeError("File search isn't available right now.") from exc
 
     def is_available(self) -> bool:
         try:
@@ -48,7 +47,7 @@ class VectorService:
             raise
         except Exception as exc:
             self._reset_client()
-            raise RuntimeError("Failed to store the document in Chroma.") from exc
+            raise RuntimeError("We couldn't save that file right now.") from exc
 
     def query_documents(self, query_text: str, n_results: int = 3):
         try:
@@ -60,4 +59,17 @@ class VectorService:
             raise
         except Exception as exc:
             self._reset_client()
-            raise RuntimeError("Failed to query documents from Chroma.") from exc
+            raise RuntimeError("We couldn't search your files right now.") from exc
+
+    def list_documents(self, limit: int = 100, offset: int = 0) -> dict[str, Any]:
+        try:
+            return self._get_collection().get(
+                limit=limit,
+                offset=offset,
+                include=["metadatas"],
+            )
+        except RuntimeError:
+            raise
+        except Exception as exc:
+            self._reset_client()
+            raise RuntimeError("We couldn't load your files right now.") from exc

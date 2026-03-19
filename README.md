@@ -2,85 +2,139 @@
   <img src="assets/logo.png" width="200" alt="Drifting-Apollo Logo">
 </p>
 
-# Drifting-Apollo: Secure Local AI Workspace (SLAW) 🛡️🤖
+<h1 align="center">Drifting-Apollo</h1>
+<p align="center">Private local AI workspace for chat, files, and access-controlled collaboration.</p>
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Tech Stack](https://skillicons.dev/icons?i=react,vite,fastapi,py,docker,postgres)](https://skillicons.dev)
+<p align="center">
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-16a34a?style=for-the-badge&logo=open-source-initiative&logoColor=white" alt="MIT License">
+  </a>
+  <img src="https://img.shields.io/badge/Frontend-React%20%2B%20Vite-0f172a?style=for-the-badge&logo=react&logoColor=61dafb" alt="React and Vite">
+  <img src="https://img.shields.io/badge/UI-Tailwind%20CSS-0f172a?style=for-the-badge&logo=tailwindcss&logoColor=38bdf8" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/Backend-FastAPI-0f172a?style=for-the-badge&logo=fastapi&logoColor=10b981" alt="FastAPI">
+</p>
 
-A local-first, privacy-conscious AI workspace designed for developers and researchers. **SLAW** provides a secure environment for document intelligence, local LLM interaction, and robust data privacy by keeping your AI stack entirely local.
+<p align="center">
+  <img src="https://img.shields.io/badge/Runtime-Python-0f172a?style=for-the-badge&logo=python&logoColor=facc15" alt="Python">
+  <img src="https://img.shields.io/badge/Infra-Docker-0f172a?style=for-the-badge&logo=docker&logoColor=60a5fa" alt="Docker">
+  <img src="https://img.shields.io/badge/Data-SQLite%20%7C%20PostgreSQL-0f172a?style=for-the-badge&logo=postgresql&logoColor=93c5fd" alt="SQLite and PostgreSQL">
+  <img src="https://img.shields.io/badge/AI-Ollama%20%2B%20Chroma-0f172a?style=for-the-badge&logoColor=white" alt="Ollama and Chroma">
+</p>
 
-## 🚀 Unified Infrastructure
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=react,vite,tailwind,fastapi,python,docker,postgres,sqlite" alt="Tech icons">
+</p>
 
-The workspace is now fully containerized using Docker, providing a consistent environment for all core services:
+## Overview
 
-- **Frontend**: ![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB) ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white) Vite + React
-- **Backend API**: ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white) ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white) FastAPI (Python)
-- **Vector Intelligence**: ![ChromaDB](https://img.shields.io/badge/ChromaDB-black?style=flat) ChromaDB (Containerized)
-- **Model Engine**: ![Ollama](https://img.shields.io/badge/Ollama-black?style=flat) Ollama (Containerized or Local)
-- **Database**: ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) PostgreSQL 15
+Drifting-Apollo is a private workspace for chatting with a local AI model and your uploaded files. It is built for teams or individuals who want local-first AI workflows, sign-in, saved chat, and file-backed answers in one app.
 
-## 🛡️ Security & Hardening
+## Tech Stack
 
-Security is a core pillar of **Drifting-Apollo**. Recent updates include:
+- Frontend: React, Vite, Tailwind CSS
+- Backend: FastAPI, Python
+- Database: SQLite by default, PostgreSQL through `DATABASE_URL`
+- AI services: Ollama for generation, Chroma for file search
+- Optional safety service: LLM-Guard sidecar
+- Packaging and local infra: Docker Compose
 
-- **Hardened CORS Policy**: Strict origin validation restricted to authorized local development environments (`http://localhost:5173`).
-- **Resource Constraints**: 
-  - **File Size Limits**: Document uploads are capped at **10MB** to prevent resource exhaustion.
-  - **Input Sanitization**: Basic prompt injection filtering for incoming queries.
-- **Supply Chain Security**: All backend dependencies are **pinned** to specific, verified versions in `requirements.txt`.
-- **Privacy First**: No telemetry or external API calls are made for inference or vector storage when configured with local models.
+## What It Does
 
-## ✨ Core Features
+- Sign-in with two access levels: `admin` and `user`
+- First admin setup from the same machine by default
+- Saved chat history per signed-in person
+- PDF and TXT uploads with file-backed answers
+- Admin-only people management
+- Health and service status in the UI
+- Optional safety scanning for prompts, files, retrieved context, and model output
 
-- **Document Intelligence (RAG)**: Index PDF and TXT files (up to 10MB) for context-aware chat.
-- **Enhanced Health Monitoring**: The UI provides real-time status for the API, LLM engine, and Vector database.
-- **Security Layer**: 
-  - Prompt injection detection.
-  - Malicious query logging.
-- **Workspace Views**: Preview roles for User and Admin views (RBAC logic pending).
+## Safety and Access
 
-## 🏗️ Architecture
+- Frontend access is limited to local development origins such as `http://localhost:5173`
+- Backend listens on `127.0.0.1` by default
+- Login and first-admin setup are rate-limited
+- Uploaded files are capped at 10 MB
+- Auth signing data is generated automatically when not provided
+- Docker services are bound to `127.0.0.1` by default
+- Optional LLM-Guard scanning can be enabled for stricter deployments
+
+## Architecture
 
 ```mermaid
 graph TD
-    UI[React Frontend] -->|API Calls| API[FastAPI Backend]
-    API -->|Prompt Filtering| Security[Security Layer]
-    Security -->|Query| Vector[ChromaDB]
-    Security -->|Completion| LLM[Ollama]
-    API -->|Optional| PG[PostgreSQL]
+    UI["React Frontend"] -->|API calls| API["FastAPI Backend"]
+    API -->|Sign-in and access| DB["SQLite or PostgreSQL"]
+    API -->|File search| CHROMA["Chroma"]
+    API -->|Answer generation| OLLAMA["Ollama"]
+    API -->|Optional safety scan| GUARD["LLM-Guard"]
 ```
 
-## 🛠️ How to Run
+## Quick Start
 
 ### 1. Prerequisites
+
 - [Docker & Docker Compose](https://docs.docker.com/get-docker/)
-- [Node.js](https://nodejs.org/) (for frontend development)
+- [Node.js](https://nodejs.org/)
 - [Python 3.10+](https://www.python.org/)
 
-### 2. Start Infrastructure
-Launch all core services (PostgreSQL, ChromaDB, Ollama) using our unified compose file:
+### 2. Start Local Services
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-### 3. Setup Backend
-1. `cd backend`
-2. `python -m venv venv && source venv/bin/activate` # Recommended
-3. `pip install -r requirements.txt`
-4. `python main.py`
+To include the optional safety sidecar, configure its local auth setting in your shell and start the `security` profile.
 
-### 4. Setup Frontend
-1. `cd frontend`
-2. `npm install`
-3. `npm run dev`
+```bash
+docker compose --profile security up -d
+```
 
-Access the UI at: `http://localhost:5173`
+### 3. Start the Backend
 
-## 🚧 Roadmap & Gaps
-- [ ] **RBAC & JWT**: Full authentication and Role-Based Access Control.
-- [ ] **Persistence Layer**: Wiring PostgreSQL for user and chat history storage.
-- [ ] **Advanced Filtering**: Integration with LLM-Guard for production-grade security.
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python main.py
+```
 
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+If you want to customize database, model, host, or safety-service behavior, add a local `.env` file before starting the backend.
+
+### 4. Start the Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open the app at `http://localhost:5173`.
+
+## Access Model
+
+- Not signed in: health checks and first admin setup only
+- User: chat, view files, and manage personal chat history
+- Admin: everything a user can do, plus upload files and manage people
+
+## LLM-Guard Sidecar
+
+LLM-Guard runs as a separate API service in this project. When enabled, it can scan:
+
+- user prompts
+- uploaded file text
+- retrieved file context
+- model output
+
+The included [scanners.yml](/Users/minhtet/Projects/drifting-apollo/llm-guard/scanners.yml) focuses on prompt injection, hidden text, input size checks, sensitive content checks, and unsafe links.
+
+## Roadmap
+
+- More detailed access rules beyond `admin` and `user`
+- Named conversations and history search
+- More advanced file management
+- Stricter LLM-Guard tuning for production use
+
+## License
+
+Licensed under the [MIT License](https://opensource.org/licenses/MIT).
