@@ -10,6 +10,18 @@ class InjectionDetector:
         r"(?i)bypass",
         r"(?i)output the system",
         r"(?i)forget (everything|all)",
+        r"(?i)new role",
+        r"(?i)act as",
+        r"(?i)developer mode",
+        r"(?i)jailbreak",
+        r"(?i)dan mode",
+        r"(?i)do anything now",
+        r"(?i)stay in character",
+        r"(?i)hypothetical scenario",
+        r"(?i)inverse logic",
+        r"(?i)secret key",
+        r"(?i)password",
+        r"(?i)admin access",
     ]
 
     @staticmethod
@@ -25,9 +37,19 @@ class InjectionDetector:
     @staticmethod
     def sanitize(text: str) -> str:
         """
-        Basic sanitization to remove potentially harmful characters
-        while preserving natural language.
+        Broadly sanitizes the string to mitigate injection attempts
+        and normalize input.
         """
-        # Remove any scripts or HTML tags just in case
+        # Remove any scripts or HTML tags
         sanitized = re.sub(r"<[^>]*?>", "", text)
-        return sanitized
+        
+        # Remove non-printable control characters
+        sanitized = "".join(char for char in sanitized if char.isprintable() or char in "\n\r\t")
+        
+        # Normalize whitespace (replace multiple spaces with one)
+        sanitized = re.sub(r"[ \t]+", " ", sanitized)
+        
+        # Optional: Limit length of consecutive special characters (prevents some obfuscation)
+        sanitized = re.sub(r"([!@#$%^&*()_+={}\[\]|\\:;\"'<>,.?/~`]){4,}", r"\1\1\1", sanitized)
+
+        return sanitized.strip()

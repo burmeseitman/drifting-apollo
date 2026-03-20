@@ -41,9 +41,31 @@ def _guard_blocks_output(result) -> bool:
 
 
 def _scan_user_prompt(prompt: str, current_user: User) -> str:
+    # 1. Fast-pass: Check for common manual patterns
+    if InjectionDetector.is_malicious(prompt):
+        log_suspicious_query(
+            prompt,
+            "Prompt Injection Detected (Manual Check)",
+            user_id=current_user.username,
+        )
+        raise HTTPException(status_code=400, detail="This request was blocked by a safety check.")
+
+    sanitized_text = prompt
+
+    # 2. Deep-pass: Use LLM Guard if enabled
     if llm_guard.is_enabled():
         try:
             result = llm_guard.analyze_prompt(prompt)
+            if result is not None:
+                if _guard_blocks_prompt(result):
+                    log_security_event(
+                        "Prompt blocked by LLM Guard",
+                        user_id=current_user.username,
+                        details=str(result.scanners),
+                    )
+                    raise HTTPException(status_code=400, detail="This request was blocked by a safety check.")
+                
+                sanitized_text = result.sanitized_text
         except LLMGuardUnavailableError as exc:
             log_security_event(
                 "LLM Guard input scan unavailable",
@@ -53,28 +75,8 @@ def _scan_user_prompt(prompt: str, current_user: User) -> str:
             if settings.llm_guard_fail_closed:
                 raise HTTPException(status_code=503, detail="Safety service unavailable.") from exc
 
-            result = None
-
-        if result is not None:
-            if _guard_blocks_prompt(result):
-                log_security_event(
-                    "Prompt blocked by LLM Guard",
-                    user_id=current_user.username,
-                    details=str(result.scanners),
-                )
-                raise HTTPException(status_code=400, detail="This request was blocked by a safety check.")
-
-            return result.sanitized_text
-
-    if InjectionDetector.is_malicious(prompt):
-        log_suspicious_query(
-            prompt,
-            "Prompt Injection Detected",
-            user_id=current_user.username,
-        )
-        raise HTTPException(status_code=400, detail="This request was blocked by a safety check.")
-
-    return InjectionDetector.sanitize(prompt)
+    # 3. Final sanitization: Remove HTML control chars, and other noise
+    return InjectionDetector.sanitize(sanitized_text)
 
 
 def _sanitize_retrieved_context(context: str, current_user: User) -> str:
@@ -82,10 +84,20 @@ def _sanitize_retrieved_context(context: str, current_user: User) -> str:
         return ""
 
     if not llm_guard.is_enabled():
-        return context
+        return InjectionDetector.sanitize(context)
 
     try:
         result = llm_guard.analyze_text_chunks(context, scanners_suppress=["TokenLimit"])
+        if result is not None:
+            if _guard_blocks_prompt(result):
+                log_security_event(
+                    "Retrieved context dropped by LLM Guard",
+                    user_id=current_user.username,
+                    details=str(result.scanners),
+                )
+                return ""
+            
+            return InjectionDetector.sanitize(result.sanitized_text)
     except LLMGuardUnavailableError as exc:
         log_security_event(
             "LLM Guard context scan unavailable",
@@ -94,19 +106,8 @@ def _sanitize_retrieved_context(context: str, current_user: User) -> str:
         )
         if settings.llm_guard_fail_closed:
             raise HTTPException(status_code=503, detail="Safety service unavailable.") from exc
-
-        return context
-
-    if _guard_blocks_prompt(result):
-        log_security_event(
-            "Retrieved context dropped by LLM Guard",
-            user_id=current_user.username,
-            details=str(result.scanners),
-        )
-        return ""
-
-    return result.sanitized_text
-
+        
+        return InjectionDetector.sanitize(context)
 
 def _sanitize_model_output(prompt: str, response: str, current_user: User) -> str:
     if not llm_guard.is_enabled() or not settings.llm_guard_scan_output:
