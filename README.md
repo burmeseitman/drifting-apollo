@@ -12,7 +12,7 @@ An enterprise-ready, private workspace for local-first AI workflows, document in
   </a>
   <img src="https://img.shields.io/badge/Frontend-React-61dafb?style=flat-square&logo=react" alt="React">
   <img src="https://img.shields.io/badge/Backend-FastAPI-10b981?style=flat-square&logo=fastapi" alt="FastAPI">
-  <img src="https://img.shields.io/badge/AI-Ollama%20%7C%20Chroma-ffffff?style=flat-square" alt="Ollama and Chroma">
+  <img src="https://img.shields.io/badge/AI-Llama.cpp%20%7C%20Chroma-ffffff?style=flat-square" alt="Llama.cpp and Chroma">
   <img src="https://img.shields.io/badge/Security-LLM--Guard-ff4b4b?style=flat-square" alt="Security LLM-Guard">
 </p>
 
@@ -28,7 +28,7 @@ An enterprise-ready, private workspace for local-first AI workflows, document in
 - **📄 Document Intelligence**: High-performance RAG (Retrieval-Augmented Generation) supporting PDF and text formats with vector storage via Chroma.
 - **👥 Multi-Tenant Architecture**: Robust role-based access control (RBAC) with `Admin` and `User` levels.
 - **💬 Session Persistence**: Individualized chat history and secure state management per authenticated user.
-- **🛠️ Self-Healing Diagnostics**: Real-time service status monitoring for backend components (Ollama, Chroma, Database).
+- **🛠️ Self-Healing Diagnostics**: Real-time service status monitoring for backend components (Local LLM, Chroma, Database).
 
 ## 🛡️ Security & Privacy
 
@@ -45,7 +45,7 @@ graph TD
     UI["React Frontend"] -->|Secure API| API["FastAPI Backend"]
     API -->|Auth & Persistence| DB["SQLite/PostgreSQL"]
     API -->|Vector Search| CHROMA["ChromaDB"]
-    API -->|Local Inference| OLLAMA["Ollama"]
+    API -->|Local Inference| LLM["Llama.cpp"]
     API -->|Safety Scanning| GUARD["LLM-Guard"]
 ```
 
@@ -55,7 +55,7 @@ The project utilizes a modern containerized stack:
 - **Frontend**: React, Vite, Tailwind CSS
 - **Backend API**: FastAPI (Python 3.10+)
 - **Vector Database**: ChromaDB
-- **Inference Engine**: Ollama
+- **Inference Engine**: Llama.cpp (via llama-cpp-python)
 - **Safety Proxy**: LLM-Guard Sidecar
 
 ## 🚦 Quick Start

@@ -12,11 +12,11 @@ from app.schemas.chat import ChatHistoryDeleteResponse, ChatHistoryResponse, Cha
 from app.security.auth import get_current_user
 from app.security.injection_detector import InjectionDetector
 from app.services.llm_guard_service import LLMGuardService, LLMGuardUnavailableError
-from app.services.ollama_service import OllamaService
+from app.llm.service import LocalLLMService
 from app.services.vector_service import VectorService
 
 router = APIRouter()
-ollama = OllamaService()
+llm = LocalLLMService()
 vector_db = VectorService()
 llm_guard = LLMGuardService()
 
@@ -182,7 +182,7 @@ async def chat_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    selected_model = request.model.strip() or settings.ollama_model
+    selected_model = request.model.strip() or llm.get_default_model()
     sanitized_prompt = _scan_user_prompt(request.prompt, current_user)
     context = ""
 
@@ -195,7 +195,7 @@ async def chat_endpoint(
         except Exception:
             context = ""
 
-    response = ollama.generate_response(selected_model, sanitized_prompt, context)
+    response = llm.generate_response(selected_model, sanitized_prompt, context)
     response = _sanitize_model_output(sanitized_prompt, response, current_user)
 
     db.add_all(

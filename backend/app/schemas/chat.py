@@ -2,12 +2,12 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.core.config import settings
+
 
 
 class ChatRequest(BaseModel):
     prompt: str = Field(min_length=1, max_length=8000)
-    model: str = Field(default=settings.ollama_model, min_length=1, max_length=100)
+    model: str = Field(default="", min_length=0, max_length=100)
     use_rag: bool = True
 
 

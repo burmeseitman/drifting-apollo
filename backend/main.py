@@ -9,11 +9,11 @@ from app.api.users import router as users_router
 from app.core.config import settings
 from app.core.database import init_db, is_database_available
 from app.services.llm_guard_service import LLMGuardService
-from app.services.ollama_service import OllamaService
+from app.llm.service import LocalLLMService
 from app.services.vector_service import VectorService
 
 app = FastAPI(title="Secure Local AI Workspace (SLAW) API")
-ollama_service = OllamaService()
+llm_service = LocalLLMService()
 vector_service = VectorService()
 llm_guard_service = LLMGuardService()
 
@@ -48,9 +48,9 @@ async def root():
 async def health():
     database_available = is_database_available()
     chroma_available = vector_service.is_available()
-    ollama_available = ollama_service.is_available()
+    llm_available = llm_service.is_available()
     llm_guard_available = llm_guard_service.is_available()
-    required_services = [database_available, chroma_available, ollama_available]
+    required_services = [database_available, chroma_available, llm_available]
     if llm_guard_service.is_enabled():
         required_services.append(llm_guard_available)
 
@@ -62,12 +62,12 @@ async def health():
             "api": True,
             "database": database_available,
             "chroma": chroma_available,
-            "ollama": ollama_available,
+            "llm": llm_available,
             "llm_guard": llm_guard_available,
         },
         "model": {
-            "provider": "ollama",
-            "name": ollama_service.get_default_model(),
+            "provider": "llama-cpp",
+            "name": llm_service.get_default_model(),
         },
         "security": {
             "llm_guard_enabled": llm_guard_service.is_enabled(),

@@ -37,8 +37,8 @@ class Settings(BaseSettings):
     login_rate_limit_window_seconds: int = 300
     bootstrap_rate_limit_count: int = 3
     bootstrap_rate_limit_window_seconds: int = 600
-    ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3"
+    llm_model_path: str = "models/llama-3-8b.gguf"
+    llm_context_window: int = 2048
     llm_guard_enabled: bool = False
     llm_guard_base_url: str = "http://localhost:8002"
     llm_guard_api_token: str = ""
